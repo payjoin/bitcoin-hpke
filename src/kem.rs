@@ -231,4 +231,12 @@ mod tests {
         test_encap_correctness!(test_encap_correctness_k256, crate::kem::DhK256HkdfSha256);
         test_encapped_serialize!(test_encapped_serialize_k256, crate::kem::DhK256HkdfSha256);
     }
+
+    #[cfg(feature = "secp")]
+    mod secp_tests {
+        use super::*;
+
+        test_encap_correctness!(test_encap_correctness_secp, crate::kem::SecpK256HkdfSha256);
+        test_encapped_serialize!(test_encapped_serialize_secp, crate::kem::SecpK256HkdfSha256);
+    }
 }
