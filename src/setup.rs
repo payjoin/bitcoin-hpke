@@ -428,4 +428,22 @@ mod test {
             crate::kem::dhk256_hkdfsha256::DhK256HkdfSha256
         );
     }
+
+    #[cfg(feature = "secp")]
+    mod secp_tests {
+        use super::*;
+
+        test_setup_correctness!(
+            test_setup_correctness_secp,
+            ChaCha20Poly1305,
+            HkdfSha256,
+            crate::kem::SecpK256HkdfSha256
+        );
+        test_setup_soundness!(
+            test_setup_soundness_secp,
+            ChaCha20Poly1305,
+            HkdfSha256,
+            crate::kem::SecpK256HkdfSha256
+        );
+    }
 }

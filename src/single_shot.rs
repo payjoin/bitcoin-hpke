@@ -263,4 +263,12 @@ mod test {
         crate::kdf::HkdfSha256,
         crate::kem::dhk256_hkdfsha256::DhK256HkdfSha256
     );
+
+    #[cfg(feature = "secp")]
+    test_single_shot_correctness!(
+        test_single_shot_correctness_secp,
+        ChaCha20Poly1305,
+        crate::kdf::HkdfSha256,
+        crate::kem::SecpK256HkdfSha256
+    );
 }

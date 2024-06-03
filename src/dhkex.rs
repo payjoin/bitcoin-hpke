@@ -49,3 +49,6 @@ pub(crate) mod ecdh_nist;
 
 #[cfg(feature = "x25519")]
 pub(crate) mod x25519;
+
+#[cfg(feature = "secp")]
+pub(crate) mod secp256k1;

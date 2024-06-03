@@ -402,3 +402,14 @@ impl_dhkem!(
     0x0016,
     "Represents DHKEM(K-256, HKDF-SHA256)"
 );
+
+// Implement DHKEM(Secp256k1, HKDF-SHA256)
+#[cfg(feature = "secp")]
+impl_dhkem!(
+    secpk256_hkdfsha256,
+    SecpK256HkdfSha256,
+    crate::dhkex::secp256k1::Secp256k1,
+    crate::kdf::HkdfSha256,
+    0x0016,
+    "Represents DHKEM(Secp256k1, HKDF-SHA256)"
+);
