@@ -224,6 +224,11 @@ pub fn benches() {
         hpke::kdf::HkdfSha256,
         hpke::kem::X25519HkdfSha256,
     >("Non-NIST[seclevel=128]", &mut c);
+
+    #[cfg(feature = "secp")]
+    bench_ciphersuite::<hpke::aead::AesGcm128, hpke::kdf::HkdfSha256, hpke::kem::SecpK256HkdfSha256>(
+        "secp", &mut c,
+    );
 }
 
 criterion_main!(benches);
