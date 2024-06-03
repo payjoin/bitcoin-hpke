@@ -2,8 +2,8 @@ use crate::{
     aead::{Aead, AesGcm128, AesGcm256, ChaCha20Poly1305, ExportOnlyAead},
     kdf::{HkdfSha256, HkdfSha384, HkdfSha512, Kdf as KdfTrait},
     kem::{
-        self, DhP256HkdfSha256, DhP384HkdfSha384, DhP521HkdfSha512, Kem as KemTrait, SharedSecret,
-        X25519HkdfSha256,
+        self, DhP256HkdfSha256, DhP384HkdfSha384, DhP521HkdfSha512, Kem as KemTrait,
+        SecpK256HkdfSha256, SharedSecret, X25519HkdfSha256,
     },
     op_mode::{OpModeR, PskBundle},
     setup::setup_receiver,
@@ -85,6 +85,20 @@ impl TestableKem for DhP521HkdfSha512 {
         sk_eph: Self::EphemeralKey,
     ) -> Result<(SharedSecret<Self>, Self::EncappedKey), HpkeError> {
         kem::dhp521_hkdfsha512::encap_with_eph(pk_recip, sender_id_keypair, sk_eph)
+    }
+}
+
+impl TestableKem for SecpK256HkdfSha256 {
+    // In DHKEM, ephemeral keys and private keys are both scalars
+    type EphemeralKey = <SecpK256HkdfSha256 as KemTrait>::PrivateKey;
+
+    // Call the secp deterministic encap function we defined in dhkem.rs
+    fn encap_with_eph(
+        pk_recip: &Self::PublicKey,
+        sender_id_keypair: Option<(&Self::PrivateKey, &Self::PublicKey)>,
+        sk_eph: Self::EphemeralKey,
+    ) -> Result<(SharedSecret<Self>, Self::EncappedKey), HpkeError> {
+        kem::secpk256_hkdfsha256::encap_with_eph(pk_recip, sender_id_keypair, sk_eph)
     }
 }
 
@@ -386,6 +400,7 @@ fn kat_test() {
             && tv.kem_id != DhP256HkdfSha256::KEM_ID
             && tv.kem_id != DhP384HkdfSha384::KEM_ID
             && tv.kem_id != DhP521HkdfSha512::KEM_ID
+            && tv.kem_id != SecpK256HkdfSha256::KEM_ID
         {
             continue;
         }
@@ -399,7 +414,8 @@ fn kat_test() {
                 X25519HkdfSha256,
                 DhP256HkdfSha256,
                 DhP384HkdfSha384,
-                DhP521HkdfSha512
+                DhP521HkdfSha512,
+                SecpK256HkdfSha256
             )
         );
 
