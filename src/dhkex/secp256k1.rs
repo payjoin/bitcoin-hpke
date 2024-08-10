@@ -12,11 +12,11 @@ use subtle::{Choice, ConstantTimeEq};
 
 /// A secp256k1 public key
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct PublicKey(bitcoin::secp256k1::PublicKey);
+pub struct PublicKey(secp256k1::PublicKey);
 
 /// A secp256k1 private key
 #[derive(Clone)]
-pub struct PrivateKey(bitcoin::secp256k1::SecretKey);
+pub struct PrivateKey(secp256k1::SecretKey);
 
 impl ConstantTimeEq for PrivateKey {
     fn ct_eq(&self, other: &Self) -> Choice {
@@ -51,16 +51,15 @@ impl Deserializable for PublicKey {
     // secp256k1 lets us convert [u8; 65] to pubkeys. Assuming the input length is correct, this
     // conversion is infallible, so no ValidationErrors are raised.
     fn from_bytes(encoded: &[u8]) -> Result<Self, HpkeError> {
-        // TODO can I get rid of equal len since bitcoin::secp256k1 already does this?
+        // TODO can I get rid of equal len since secp256k1 already does this?
         // Pubkeys must be 65 bytes
         enforce_equal_len(Self::OutputSize::to_usize(), encoded.len())?;
 
         // Copy to a fixed-size array
-        let mut arr = [0u8; bitcoin::secp256k1::constants::UNCOMPRESSED_PUBLIC_KEY_SIZE];
+        let mut arr = [0u8; secp256k1::constants::UNCOMPRESSED_PUBLIC_KEY_SIZE];
         arr.copy_from_slice(encoded);
         Ok(PublicKey(
-            bitcoin::secp256k1::PublicKey::from_slice(&arr)
-                .map_err(|_| HpkeError::ValidationError)?,
+            secp256k1::PublicKey::from_slice(&arr).map_err(|_| HpkeError::ValidationError)?,
         ))
     }
 }
@@ -85,7 +84,7 @@ impl Deserializable for PrivateKey {
         enforce_equal_len(Self::OutputSize::to_usize(), encoded.len())?;
 
         // Copy to a fixed-size array
-        let mut arr = [0u8; bitcoin::secp256k1::constants::SECRET_KEY_SIZE];
+        let mut arr = [0u8; secp256k1::constants::SECRET_KEY_SIZE];
         arr.copy_from_slice(encoded);
 
         // * Invariant: PrivateKey is in [1,p). This is preserved here.
@@ -93,8 +92,7 @@ impl Deserializable for PrivateKey {
         //   its submethod,
         // * ffi::secp256k1_ec_seckey_verify() checks that the value doesn't exceed the
         //   curve order.
-        let sk = bitcoin::secp256k1::SecretKey::from_slice(&arr)
-            .map_err(|_| HpkeError::ValidationError)?;
+        let sk = secp256k1::SecretKey::from_slice(&arr).map_err(|_| HpkeError::ValidationError)?;
         Ok(PrivateKey(sk))
     }
 }
@@ -109,7 +107,7 @@ impl Serializable for KexResult {
         enforce_outbuf_len::<Self>(buf);
 
         // Dalek lets us convert shared secrets to to [u8; 32]
-        buf.copy_from_slice(&self.0[..bitcoin::secp256k1::constants::SECRET_KEY_SIZE]);
+        buf.copy_from_slice(&self.0[..secp256k1::constants::SECRET_KEY_SIZE]);
     }
 }
 
@@ -127,7 +125,7 @@ impl DhKeyExchange for Secp256k1 {
     /// Converts an Secp256k1 private key to a public key
     #[doc(hidden)]
     fn sk_to_pk(sk: &PrivateKey) -> PublicKey {
-        PublicKey(bitcoin::secp256k1::PublicKey::from_secret_key_global(&sk.0))
+        PublicKey(secp256k1::PublicKey::from_secret_key_global(&sk.0))
     }
 
     /// Does the DH operation. Returns an error if and only if the DH result was all zeros. This is
@@ -135,8 +133,8 @@ impl DhKeyExchange for Secp256k1 {
     /// by the caller, i.e., `HpkeError::EncapError` or `HpkeError::DecapError`.
     #[doc(hidden)]
     fn dh(sk: &PrivateKey, pk: &PublicKey) -> Result<KexResult, DhError> {
-        use bitcoin::secp256k1::constants::SECRET_KEY_SIZE;
-        let res = bitcoin::secp256k1::ecdh::shared_secret_point(&pk.0, &sk.0);
+        use secp256k1::constants::SECRET_KEY_SIZE;
+        let res = secp256k1::ecdh::shared_secret_point(&pk.0, &sk.0);
         // "Senders and recipients MUST check whether the shared secret is the all-zero value
         // and abort if so"
         if res[..SECRET_KEY_SIZE].ct_eq(&[0u8; SECRET_KEY_SIZE]).into() {
@@ -165,8 +163,8 @@ impl DhKeyExchange for Secp256k1 {
             .labeled_expand(suite_id, b"sk", &[], &mut buf)
             .unwrap();
 
-        let sk = bitcoin::secp256k1::SecretKey::from_slice(&buf).expect("clamped private key");
-        let pk = bitcoin::secp256k1::PublicKey::from_secret_key_global(&sk);
+        let sk = secp256k1::SecretKey::from_slice(&buf).expect("clamped private key");
+        let pk = secp256k1::PublicKey::from_secret_key_global(&sk);
         (PrivateKey(sk), PublicKey(pk))
     }
 }
