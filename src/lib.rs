@@ -1,4 +1,4 @@
-//! # hpke
+//! # bitcoin_hpke
 //! **WARNING:** This code has not been audited. Use at your own discretion.
 //!
 //! This is a pure Rust implementation of the
@@ -11,7 +11,7 @@
 //! # #[cfg(feature = "secp")]
 //! # {
 //! # use rand::{rngs::StdRng, SeedableRng};
-//! # use hpke::{
+//! # use bitcoin_hpke::{
 //! #     aead::ChaCha20Poly1305,
 //! #     kdf::HkdfSha256,
 //! #     kem::SecpK256HkdfSha256,
@@ -34,7 +34,7 @@
 //! // knew, she'd be able to authenticate herself. See the OpModeS and OpModeR types for more
 //! // detail.
 //! let (encapsulated_key, mut encryption_context) =
-//!     hpke::setup_sender::<Aead, Kdf, Kem, _>(&OpModeS::Base, &bob_pk, info_str, &mut csprng)
+//!     bitcoin_hpke::setup_sender::<Aead, Kdf, Kem, _>(&OpModeS::Base, &bob_pk, info_str, &mut csprng)
 //!         .expect("invalid server pubkey!");
 //!
 //! // Alice encrypts a message to Bob. `aad` is authenticated associated data that is not
@@ -54,7 +54,7 @@
 //!
 //! // Somewhere far away, Bob receives the data and makes a decryption session
 //! let mut decryption_context =
-//!     hpke::setup_receiver::<Aead, Kdf, Kem>(
+//!     bitcoin_hpke::setup_receiver::<Aead, Kdf, Kem>(
 //!         &OpModeR::Base,
 //!         &bob_sk,
 //!         &encapsulated_key,
@@ -96,15 +96,7 @@ pub(crate) use alloc::vec::Vec;
 
 // kat_tests tests all the implemented ciphersuites, and thus needs all the dependencies. It also
 // needs std for file IO.
-#[cfg(all(
-    test,
-    feature = "std",
-    feature = "x25519",
-    feature = "p256",
-    feature = "p384",
-    feature = "p521",
-    feature = "secp"
-))]
+#[cfg(all(test, feature = "std", feature = "secp"))]
 mod kat_tests;
 
 #[cfg(test)]

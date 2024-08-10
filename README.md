@@ -1,10 +1,10 @@
-rust-hpke
+bitcoin-hpke
 =========
-[![Version](https://img.shields.io/crates/v/hpke.svg)](https://crates.io/crates/hpke)
-[![Docs](https://docs.rs/hpke/badge.svg)](https://docs.rs/hpke)
-[![CI](https://github.com/rozbb/rust-hpke/workflows/CI/badge.svg)](https://github.com/rozbb/rust-hpke/actions)
+[![Version](https://img.shields.io/crates/v/hpke.svg)](https://crates.io/crates/bitcoin-hpke)
+[![Docs](https://docs.rs/bitcoin-hpke/badge.svg)](https://docs.rs/bitcoin-hpke)
+[![CI](https://github.com/payjoin/bitcoin-hpke/workflows/CI/badge.svg)](https://github.com/payjoin/bitcoin-hpke/actions)
 
-This is an implementation of the [HPKE](https://www.rfc-editor.org/rfc/rfc9180.html) hybrid encryption standard (RFC 9180).
+This is an implementation of the [HPKE](https://www.rfc-editor.org/rfc/rfc9180.html) hybrid encryption standard (RFC 9180) on secp256k1.
 
 Warning
 -------
@@ -26,11 +26,6 @@ This implementation complies with the [HPKE standard](https://www.rfc-editor.org
 Here are all the primitives listed in the spec. The primitives with checked boxes are the ones that are implemented.
 
 * KEMs
-    - [X] DHKEM(Curve25519, HKDF-SHA256)
-    - [ ] DHKEM(Curve448, HKDF-SHA512)
-    - [X] DHKEM(P-256, HKDF-SHA256)
-    - [X] DHKEM(P-384, HKDF-SHA384)
-    - [X] DHKEM(P-521, HKDF-SHA512)
     - [X] DHKEM(secp256k1, HKDF-SHA256)
 * KDFs
     - [X] HKDF-SHA256
@@ -44,15 +39,12 @@ Here are all the primitives listed in the spec. The primitives with checked boxe
 Crate Features
 --------------
 
-Default features flags: `alloc`, `x25519`, `p256`.
+Default features flags: `alloc`, `secp`.
 
 Feature flag list:
 
 * `alloc` - Includes allocating methods like `AeadCtxR::open()` and `AeadCtxS::seal()`
-* `x25519` - Enables X25519-based KEMs
-* `p256` - Enables NIST P-256-based KEMs
-* `p384` - Enables NIST P-384-based KEMs
-* `p521` - Enables NIST P-521-based KEMs
+* `secp` - Enables secp256k1-based KEMs
 * `std` - Includes an implementation of `std::error::Error` for `HpkeError`. Also does what `alloc` does.
 
 For info on how to omit or include feature flags, see the [cargo docs on features](https://doc.rust-lang.org/cargo/reference/specifying-dependencies.html#choosing-features).
@@ -91,8 +83,7 @@ To run all benchmarks, execute `cargo bench --all-features`. If you set your own
 
 Ciphersuites benchmarked:
 
-* NIST Ciphersuite with 128-bit security: AES-GCM-128, HKDF-SHA256, ECDH-P256
-* Non-NIST Ciphersuite with 128-bit security: ChaCha20-Poly1305, HKDF-SHA256, X25519
+* NIST Ciphersuite with 128-bit security: AES-GCM-128, HKDF-SHA256, secp256k1
 
 Functions benchmarked in each ciphersuite:
 
@@ -107,7 +98,7 @@ Agility
 
 A definition: *crypto agility* refers to the ability of a cryptosystem or protocol to vary its underlying primitives. For example, TLS has "crypto agility" in that you can run the protocol with many different ciphersuites.
 
-This crate does not support crypto agility out of the box. This is because the cryptographic primitives are encoded as types satisfying certain constraints, and types need to be determined at compile time (broadly speaking). That said, there is nothing preventing you from implementing agility yourself. There is a [sample implementation](examples/agility.rs) in the examples folder. The sample implementation is messy because agility is messy.
+This crate does not support crypto agility out of the box. This is because the cryptographic primitives are encoded as types satisfying certain constraints, and types need to be determined at compile time (broadly speaking). That said, there is nothing preventing you from implementing agility yourself.
 
 License
 -------

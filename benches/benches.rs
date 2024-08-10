@@ -210,25 +210,12 @@ where
 pub fn benches() {
     let mut c = Criterion::default().configure_from_args();
 
-    // NIST ciphersuite at the 128-bit security level is AES-GCM-128, HKDF-SHA256, and ECDH-P256
-    #[cfg(feature = "p256")]
-    bench_ciphersuite::<hpke::aead::AesGcm128, hpke::kdf::HkdfSha256, hpke::kem::DhP256HkdfSha256>(
-        "NIST[seclevel=128]",
-        &mut c,
-    );
-
-    // Non-NIST ciphersuite at the 128-bit security level is ChaCha20Poly1305, HKDF-SHA256, and X25519
-    #[cfg(feature = "x25519")]
-    bench_ciphersuite::<
-        hpke::aead::ChaCha20Poly1305,
-        hpke::kdf::HkdfSha256,
-        hpke::kem::X25519HkdfSha256,
-    >("Non-NIST[seclevel=128]", &mut c);
-
     #[cfg(feature = "secp")]
-    bench_ciphersuite::<hpke::aead::AesGcm128, hpke::kdf::HkdfSha256, hpke::kem::SecpK256HkdfSha256>(
-        "secp", &mut c,
-    );
+    bench_ciphersuite::<
+        bitcoin_hpke::aead::AesGcm128,
+        bitcoin_hpke::kdf::HkdfSha256,
+        bitcoin_hpke::kem::SecpK256HkdfSha256,
+    >("secp", &mut c);
 }
 
 criterion_main!(benches);

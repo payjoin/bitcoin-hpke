@@ -15,10 +15,10 @@
 //  * Proper error handling. Everything here just panics when an error is encountered. It is up to
 //    the user of this library to do the appropriate thing when a function returns an error.
 
-use hpke::{
+use bitcoin_hpke::{
     aead::{AeadTag, ChaCha20Poly1305},
     kdf::HkdfSha384,
-    kem::X25519HkdfSha256,
+    kem::SecpK256HkdfSha256,
     Deserializable, Kem as KemTrait, OpModeR, OpModeS, Serializable,
 };
 
@@ -27,7 +27,7 @@ use rand::{rngs::StdRng, SeedableRng};
 const INFO_STR: &[u8] = b"example session";
 
 // These are the only algorithms we're gonna use for this example
-type Kem = X25519HkdfSha256;
+type Kem = SecpK256HkdfSha256;
 type Aead = ChaCha20Poly1305;
 type Kdf = HkdfSha384;
 
@@ -48,9 +48,13 @@ fn client_encrypt_msg(
 
     // Encapsulate a key and use the resulting shared secret to encrypt a message. The AEAD context
     // is what you use to encrypt.
-    let (encapped_key, mut sender_ctx) =
-        hpke::setup_sender::<Aead, Kdf, Kem, _>(&OpModeS::Base, server_pk, INFO_STR, &mut csprng)
-            .expect("invalid server pubkey!");
+    let (encapped_key, mut sender_ctx) = bitcoin_hpke::setup_sender::<Aead, Kdf, Kem, _>(
+        &OpModeS::Base,
+        server_pk,
+        INFO_STR,
+        &mut csprng,
+    )
+    .expect("invalid server pubkey!");
 
     // On success, seal_in_place_detached() will encrypt the plaintext in place
     let mut msg_copy = msg.to_vec();
@@ -81,9 +85,13 @@ fn server_decrypt_msg(
         .expect("could not deserialize the encapsulated pubkey!");
 
     // Decapsulate and derive the shared secret. This creates a shared AEAD context.
-    let mut receiver_ctx =
-        hpke::setup_receiver::<Aead, Kdf, Kem>(&OpModeR::Base, &server_sk, &encapped_key, INFO_STR)
-            .expect("failed to set up receiver!");
+    let mut receiver_ctx = bitcoin_hpke::setup_receiver::<Aead, Kdf, Kem>(
+        &OpModeR::Base,
+        &server_sk,
+        &encapped_key,
+        INFO_STR,
+    )
+    .expect("failed to set up receiver!");
 
     // On success, open_in_place_detached() will decrypt the ciphertext in place
     let mut ciphertext_copy = ciphertext.to_vec();
