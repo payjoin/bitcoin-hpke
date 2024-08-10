@@ -102,7 +102,8 @@ pub(crate) use alloc::vec::Vec;
     feature = "x25519",
     feature = "p256",
     feature = "p384",
-    feature = "p521"
+    feature = "p521",
+    feature = "secp"
 ))]
 mod kat_tests;
 
