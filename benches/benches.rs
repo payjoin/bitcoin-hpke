@@ -1,4 +1,4 @@
-use hpke::{
+use bitcoin_hpke::{
     aead::{Aead as AeadTrait, AeadCtxR, AeadTag},
     kdf::Kdf as KdfTrait,
     kem::Kem as KemTrait,

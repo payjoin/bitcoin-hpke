@@ -1,14 +1,14 @@
 [package]
-name = "hpke"
-repository = "https://github.com/rozbb/rust-hpke"
-documentation = "https://docs.rs/rust-hpke"
-description = "An implementation of the HPKE hybrid encryption standard (RFC 9180) in pure Rust"
+name = "bitcoin-hpke"
+repository = "https://github.com/payjoin/bitcoin-hpke"
+documentation = "https://docs.rs/bitcoin-hpke"
+description = "An implementation of the HPKE hybrid encryption standard (RFC 9180) on libsecp256k1"
 readme = "README.md"
 version = "0.12.0"
-authors = ["Michael Rosenberg <michael@mrosenberg.pub>"]
+authors = ["Dan Gould <d@ngould.dev>"]
 edition = "2021"
 license = "MIT/Apache-2.0"
-keywords = ["cryptography", "crypto", "key-exchange", "encryption", "aead"]
+keywords = ["cryptography", "crypto", "key-exchange", "encryption", "aead", "secp256k1", "bitcoin"]
 categories = ["cryptography", "no-std"]
 
 [features]
