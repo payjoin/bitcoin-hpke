@@ -8,19 +8,19 @@
 //!
 //! ```
 //! # #[cfg(any(feature = "alloc", feature = "std"))] {
-//! # #[cfg(feature = "x25519")]
+//! # #[cfg(feature = "secp")]
 //! # {
 //! # use rand::{rngs::StdRng, SeedableRng};
 //! # use hpke::{
 //! #     aead::ChaCha20Poly1305,
-//! #     kdf::HkdfSha384,
-//! #     kem::X25519HkdfSha256,
+//! #     kdf::HkdfSha256,
+//! #     kem::SecpK256HkdfSha256,
 //! #     Kem as KemTrait, OpModeR, OpModeS, setup_receiver, setup_sender,
 //! # };
 //! // These types define the ciphersuite Alice and Bob will be using
-//! type Kem = X25519HkdfSha256;
+//! type Kem = SecpK256HkdfSha256;
 //! type Aead = ChaCha20Poly1305;
-//! type Kdf = HkdfSha384;
+//! type Kdf = HkdfSha256;
 //!
 //! let mut csprng = StdRng::from_entropy();
 //! # let (bob_sk, bob_pk) = Kem::gen_keypair(&mut csprng);
