@@ -192,46 +192,6 @@ mod tests {
         };
     }
 
-    #[cfg(feature = "x25519")]
-    mod x25519_tests {
-        use super::*;
-
-        test_encap_correctness!(test_encap_correctness_x25519, crate::kem::X25519HkdfSha256);
-        test_encapped_serialize!(test_encapped_serialize_x25519, crate::kem::X25519HkdfSha256);
-    }
-
-    #[cfg(feature = "p256")]
-    mod p256_tests {
-        use super::*;
-
-        test_encap_correctness!(test_encap_correctness_p256, crate::kem::DhP256HkdfSha256);
-        test_encapped_serialize!(test_encapped_serialize_p256, crate::kem::DhP256HkdfSha256);
-    }
-
-    #[cfg(feature = "p384")]
-    mod p384_tests {
-        use super::*;
-
-        test_encap_correctness!(test_encap_correctness_p384, crate::kem::DhP384HkdfSha384);
-        test_encapped_serialize!(test_encapped_serialize_p384, crate::kem::DhP384HkdfSha384);
-    }
-
-    #[cfg(feature = "p521")]
-    mod p521_tests {
-        use super::*;
-
-        test_encap_correctness!(test_encap_correctness_p521, crate::kem::DhP521HkdfSha512);
-        test_encapped_serialize!(test_encapped_serialize_p521, crate::kem::DhP521HkdfSha512);
-    }
-
-    #[cfg(feature = "k256")]
-    mod k256_tests {
-        use super::*;
-
-        test_encap_correctness!(test_encap_correctness_k256, crate::kem::DhK256HkdfSha256);
-        test_encapped_serialize!(test_encapped_serialize_k256, crate::kem::DhK256HkdfSha256);
-    }
-
     #[cfg(feature = "secp")]
     mod secp_tests {
         use super::*;

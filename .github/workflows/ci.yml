@@ -37,30 +37,6 @@ jobs:
           RUSTFLAGS: -D warnings -A dead_code -A unused_imports
         run: cargo test --no-default-features --features="secp"
 
-      - name: Run cargo test with just X25519 enabled
-        env:
-          CARGO_INCREMENTAL: 0
-          RUSTFLAGS: -D warnings -A dead_code -A unused_imports
-        run: cargo test --no-default-features --features="x25519"
-
-      - name: Run cargo test with just P256 enabled
-        env:
-          CARGO_INCREMENTAL: 0
-          RUSTFLAGS: -D warnings -A dead_code -A unused_imports
-        run: cargo test --no-default-features --features="p256"
-
-      - name: Run cargo test with just P384 enabled
-        env:
-          CARGO_INCREMENTAL: 0
-          RUSTFLAGS: -D warnings -A dead_code -A unused_imports
-        run: cargo test --no-default-features --features="p384"
-
-      - name: Run cargo test with just P521 enabled
-        env:
-          CARGO_INCREMENTAL: 0
-          RUSTFLAGS: -D warnings -A dead_code -A unused_imports
-        run: cargo test --no-default-features --features="p521"
-
       - name: Run cargo test with all features enabled
         env:
           CARGO_INCREMENTAL: 0
@@ -91,20 +67,20 @@ jobs:
           command: fmt
           args: --all -- --check
 
-  # Enable this once x25519-dalek has another 2.0-pre.X release
-  #msrv:
-  #  name: Current MSRV is 1.65.0
-  #  runs-on: ubuntu-latest
-  #  steps:
-  #  - uses: actions/checkout@v3
-  #  # First run `cargo +nightly -Z minimal-verisons check` in order to get a
-  #  # Cargo.lock with the oldest possible deps
-  #  - uses: dtolnay/rust-toolchain@nightly
-  #  - run: cargo -Z minimal-versions check --all-features
-  #  # Now check that `cargo build` works with respect to the oldest possible
-  #  # deps and the stated MSRV
-  #  - uses: dtolnay/rust-toolchain@1.65.0
-  #  - run: cargo build --all-features
+  msrv:
+   name: Current MSRV is 1.63.0
+   runs-on: ubuntu-latest
+   steps:
+   - uses: actions/checkout@v3
+   # Check that `cargo build` works with respect to the oldest possible
+   # deps and the stated MSRV
+   - uses: dtolnay/rust-toolchain@1.63.0
+   - name: Pin MSRV dependencies
+     run: |
+       cargo update
+       cargo update -p half --precise 2.2.1
+       cargo update -p regex --precise 1.9.6
+   - run: cargo build --all-features
 
   clippy:
     runs-on: ubuntu-latest

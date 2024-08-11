@@ -224,46 +224,6 @@ mod test {
         };
     }
 
-    #[cfg(feature = "x25519")]
-    test_single_shot_correctness!(
-        test_single_shot_correctness_x25519,
-        ChaCha20Poly1305,
-        crate::kdf::HkdfSha256,
-        crate::kem::x25519_hkdfsha256::X25519HkdfSha256
-    );
-
-    #[cfg(feature = "p256")]
-    test_single_shot_correctness!(
-        test_single_shot_correctness_p256,
-        ChaCha20Poly1305,
-        crate::kdf::HkdfSha256,
-        crate::kem::dhp256_hkdfsha256::DhP256HkdfSha256
-    );
-
-    #[cfg(feature = "p384")]
-    test_single_shot_correctness!(
-        test_single_shot_correctness_p384,
-        ChaCha20Poly1305,
-        crate::kdf::HkdfSha384,
-        crate::kem::dhp384_hkdfsha384::DhP384HkdfSha384
-    );
-
-    #[cfg(feature = "p521")]
-    test_single_shot_correctness!(
-        test_single_shot_correctness_p521,
-        ChaCha20Poly1305,
-        crate::kdf::HkdfSha512,
-        crate::kem::dhp521_hkdfsha512::DhP521HkdfSha512
-    );
-
-    #[cfg(feature = "k256")]
-    test_single_shot_correctness!(
-        test_single_shot_correctness_k256,
-        ChaCha20Poly1305,
-        crate::kdf::HkdfSha256,
-        crate::kem::dhk256_hkdfsha256::DhK256HkdfSha256
-    );
-
     #[cfg(feature = "secp")]
     test_single_shot_correctness!(
         test_single_shot_correctness_secp,
