@@ -1,5 +1,5 @@
 use crate::{
-    aead::{Aead, AesGcm128, AesGcm256, ChaCha20Poly1305, ExportOnlyAead},
+    aead::{Aead, ChaCha20Poly1305, ExportOnlyAead},
     kdf::{HkdfSha256, HkdfSha384, HkdfSha512, Kdf as KdfTrait},
     kem::{self, Kem as KemTrait, SecpK256HkdfSha256, SharedSecret},
     op_mode::{OpModeR, PskBundle},
@@ -345,7 +345,7 @@ fn kat_test() {
         // This unrolls into 36 `if let` statements
         dispatch_testcase!(
             tv,
-            (AesGcm128, AesGcm256, ChaCha20Poly1305, ExportOnlyAead),
+            (ChaCha20Poly1305, ExportOnlyAead),
             (HkdfSha256, HkdfSha384, HkdfSha512),
             (SecpK256HkdfSha256)
         );

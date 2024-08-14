@@ -32,8 +32,6 @@ Here are all the primitives listed in the spec. The primitives with checked boxe
     - [X] HKDF-SHA384
     - [X] HKDF-SHA512
 * AEADs
-    - [X] AES-GCM-128
-    - [X] AES-GCM-256
     - [X] ChaCha20Poly1305
 
 Crate Features
@@ -90,7 +88,7 @@ To run all benchmarks, execute `cargo bench --all-features`. If you set your own
 
 Ciphersuites benchmarked:
 
-* NIST Ciphersuite with 128-bit security: AES-GCM-128, HKDF-SHA256, secp256k1
+* NIST Ciphersuite with 256-bit security: ChaCha20Poly1305, HKDF-SHA256, secp256k1
 
 Functions benchmarked in each ciphersuite:
 

@@ -456,15 +456,14 @@ impl<A: Aead, Kdf: KdfTrait, Kem: KemTrait> AeadCtxS<A, Kdf, Kem> {
 }
 
 // Export all the AEAD implementations
-mod aes_gcm;
 mod chacha20_poly1305;
 mod export_only;
 #[doc(inline)]
-pub use crate::aead::{aes_gcm::*, chacha20_poly1305::*, export_only::*};
+pub use crate::aead::{chacha20_poly1305::*, export_only::*};
 
 #[cfg(test)]
 mod test {
-    use super::{AeadTag, AesGcm128, AesGcm256, ChaCha20Poly1305, ExportOnlyAead, Seq};
+    use super::{AeadTag, ChaCha20Poly1305, ExportOnlyAead, Seq};
 
     use crate::{
         kdf::HkdfSha256, test_util::gen_ctx_simple_pair, Deserializable, HpkeError, Serializable,
@@ -673,8 +672,6 @@ mod test {
         };
     }
 
-    test_invalid_nonce!(test_invalid_nonce_aes128, AesGcm128);
-    test_invalid_nonce!(test_invalid_nonce_aes256, AesGcm128);
     test_invalid_nonce!(test_invalid_nonce_chacha, ChaCha20Poly1305);
 
     #[cfg(all(feature = "secp", any(feature = "alloc", feature = "std")))]
@@ -690,16 +687,6 @@ mod test {
         test_overflow!(test_overflow_k256, crate::kem::SecpK256HkdfSha256);
 
         test_ctx_correctness!(
-            test_ctx_correctness_aes128_k256,
-            AesGcm128,
-            crate::kem::SecpK256HkdfSha256
-        );
-        test_ctx_correctness!(
-            test_ctx_correctness_aes256_k256,
-            AesGcm256,
-            crate::kem::SecpK256HkdfSha256
-        );
-        test_ctx_correctness!(
             test_ctx_correctness_chacha_k256,
             ChaCha20Poly1305,
             crate::kem::SecpK256HkdfSha256
@@ -710,11 +697,11 @@ mod test {
     #[should_panic]
     #[test]
     fn test_write_exact() {
-        // Make an AES-GCM-128 tag (16 bytes) and try to serialize it to a buffer of 17 bytes. It
+        // Make an ChaChaPoly1305 tag (32 bytes) and try to serialize it to a buffer of 33 bytes. It
         // shouldn't matter that this is sufficient room, since write_exact needs exactly the write
         // size buffer
-        let tag = AeadTag::<AesGcm128>::default();
-        let mut buf = [0u8; 17];
+        let tag = AeadTag::<ChaCha20Poly1305>::default();
+        let mut buf = [0u8; 33];
         tag.write_exact(&mut buf);
     }
 }
