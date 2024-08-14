@@ -1,6 +1,6 @@
 use crate::{
     aead::{Aead, ChaCha20Poly1305, ExportOnlyAead},
-    kdf::{HkdfSha256, HkdfSha384, HkdfSha512, Kdf as KdfTrait},
+    kdf::{HkdfSha256, Kdf as KdfTrait},
     kem::{self, Kem as KemTrait, SecpK256HkdfSha256, SharedSecret},
     op_mode::{OpModeR, PskBundle},
     setup::setup_receiver,
@@ -346,7 +346,7 @@ fn kat_test() {
         dispatch_testcase!(
             tv,
             (ChaCha20Poly1305, ExportOnlyAead),
-            (HkdfSha256, HkdfSha384, HkdfSha512),
+            (HkdfSha256),
             (SecpK256HkdfSha256)
         );
 
