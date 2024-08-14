@@ -92,6 +92,9 @@ extern crate alloc;
 #[cfg(all(feature = "alloc", not(feature = "std")))]
 pub(crate) use alloc::vec::Vec;
 
+#[macro_use]
+mod util;
+
 //-------- Testing stuff --------//
 
 // kat_tests tests all the implemented ciphersuites, and thus needs all the dependencies. It also
@@ -108,9 +111,6 @@ mod test_util;
 // in this crate
 pub use generic_array;
 pub use rand_core;
-
-#[macro_use]
-mod util;
 
 pub mod aead;
 mod dhkex;
