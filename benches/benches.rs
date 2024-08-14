@@ -212,7 +212,7 @@ pub fn benches() {
 
     #[cfg(feature = "secp")]
     bench_ciphersuite::<
-        bitcoin_hpke::aead::AesGcm128,
+        bitcoin_hpke::aead::ChaCha20Poly1305,
         bitcoin_hpke::kdf::HkdfSha256,
         bitcoin_hpke::kem::SecpK256HkdfSha256,
     >("secp", &mut c);
