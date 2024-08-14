@@ -29,8 +29,6 @@ Here are all the primitives listed in the spec. The primitives with checked boxe
     - [X] DHKEM(secp256k1, HKDF-SHA256)
 * KDFs
     - [X] HKDF-SHA256
-    - [X] HKDF-SHA384
-    - [X] HKDF-SHA512
 * AEADs
     - [X] ChaCha20Poly1305
 

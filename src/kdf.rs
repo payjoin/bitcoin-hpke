@@ -5,7 +5,7 @@ use crate::util::write_u16_be;
 use digest::{core_api::BlockSizeUser, Digest, OutputSizeUser};
 use generic_array::GenericArray;
 use hmac::SimpleHmac;
-use sha2::{Sha256, Sha384, Sha512};
+use sha2::Sha256;
 
 const VERSION_LABEL: &[u8] = b"HPKE-v1";
 
@@ -44,28 +44,6 @@ impl KdfTrait for HkdfSha256 {
 
     // RFC 9180 §7.2: HKDF-SHA256
     const KDF_ID: u16 = 0x0001;
-}
-
-/// The implementation of HKDF-SHA384
-pub struct HkdfSha384 {}
-
-impl KdfTrait for HkdfSha384 {
-    #[doc(hidden)]
-    type HashImpl = Sha384;
-
-    // RFC 9180 §7.2: HKDF-SHA384
-    const KDF_ID: u16 = 0x0002;
-}
-
-/// The implementation of HKDF-SHA512
-pub struct HkdfSha512 {}
-
-impl KdfTrait for HkdfSha512 {
-    #[doc(hidden)]
-    type HashImpl = Sha512;
-
-    // RFC 9180 §7.2: HKDF-SHA512
-    const KDF_ID: u16 = 0x0003;
 }
 
 // RFC 9180 §4.1
