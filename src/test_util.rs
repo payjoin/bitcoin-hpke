@@ -28,8 +28,8 @@ pub(crate) fn dhkex_gen_keypair<Kex: DhKeyExchange, R: CryptoRng + RngCore>(
         GenericArray::default();
     // Fill it with randomness
     csprng.fill_bytes(&mut ikm);
-    // Run derive_keypair with a nonsense ciphersuite. We use SHA-512 to satisfy any security level
-    Kex::derive_keypair::<crate::kdf::HkdfSha512>(b"31337", &ikm)
+    // Any suite id and KDF yield a valid keypair, so the choice here is arbitrary
+    Kex::derive_keypair::<crate::kdf::HkdfSha256>(b"31337", &ikm)
 }
 
 /// Creates a pair of `AeadCtx`s without doing a key exchange
