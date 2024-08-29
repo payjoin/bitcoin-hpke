@@ -5,7 +5,10 @@ use crate::{
     Deserializable, HpkeError, Serializable,
 };
 
-use generic_array::typenum::{self, Unsigned};
+use generic_array::{
+    typenum::{self, Unsigned},
+    GenericArray,
+};
 use subtle::{Choice, ConstantTimeEq};
 
 // We wrap the types in order to abstract away the secps56k1 dep
@@ -147,8 +150,19 @@ impl DhKeyExchange for Secp256k1 {
     // RFC 9180 §7.1.3
     // def DeriveKeyPair(ikm):
     //   dkp_prk = LabeledExtract("", "dkp_prk", ikm)
-    //   sk = LabeledExpand(dkp_prk, "sk", "", Nsk)
+    //   sk = 0
+    //   counter = 0
+    //   while sk == 0 or sk >= order:
+    //     if counter > 255:
+    //       raise DeriveKeyPairError
+    //     bytes = LabeledExpand(dkp_prk, "candidate",
+    //                           I2OSP(counter, 1), Nsk)
+    //     bytes[0] = bytes[0] & bitmask
+    //     sk = OS2IP(bytes)
+    //     counter = counter + 1
     //   return (sk, pk(sk))
+
+    // RFC Draft secp256k1-based DHKEM  §3.2: the bitmask value 0xff should be used.
 
     /// Deterministically derives a keypair from the given input keying material and ciphersuite
     /// ID. The keying material SHOULD have as many bits of entropy as the bit length of a secret
@@ -158,14 +172,26 @@ impl DhKeyExchange for Secp256k1 {
         // Write the label into a byte buffer and extract from the IKM
         let (_, hkdf_ctx) = labeled_extract::<Kdf>(&[], suite_id, b"dkp_prk", ikm);
         // The buffer we hold the candidate scalar bytes in. This is the size of a private key.
-        let mut buf = [0u8; 32];
-        hkdf_ctx
-            .labeled_expand(suite_id, b"sk", &[], &mut buf)
-            .unwrap();
+        let mut buf = GenericArray::<u8, <PrivateKey as Serializable>::OutputSize>::default();
 
-        let sk = secp256k1::SecretKey::from_slice(&buf).expect("clamped private key");
-        let pk = secp256k1::PublicKey::from_secret_key_global(&sk);
-        (PrivateKey(sk), PublicKey(pk))
+        // Try to generate a key 256 times. Practically, this will succeed and return
+        // early on the first iteration.
+        for counter in 0u8..=255 {
+            hkdf_ctx
+                .labeled_expand(suite_id, b"candidate", &[counter], &mut buf)
+                .unwrap();
+
+            buf[0] &= 0xFF;
+
+            if let Ok(sk) = PrivateKey::from_bytes(&buf) {
+                let pk = Self::sk_to_pk(&sk);
+                return (sk, pk);
+            }
+        }
+
+        // The code should never ever get here. The likelihood that we get 256 bad
+        // samples in a row is astronomically low.
+        panic!("DeriveKeyPair failed all attempts");
     }
 }
 
