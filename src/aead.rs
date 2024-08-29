@@ -456,14 +456,18 @@ impl<A: Aead, Kdf: KdfTrait, Kem: KemTrait> AeadCtxS<A, Kdf, Kem> {
 }
 
 // Export all the AEAD implementations
+#[cfg(test)]
+mod aes_gcm;
 mod chacha20_poly1305;
 mod export_only;
+#[cfg(test)]
+pub use crate::aead::aes_gcm::*;
 #[doc(inline)]
 pub use crate::aead::{chacha20_poly1305::*, export_only::*};
 
 #[cfg(test)]
 mod test {
-    use super::{AeadTag, ChaCha20Poly1305, ExportOnlyAead, Seq};
+    use super::{AeadTag, AesGcm128, AesGcm256, ChaCha20Poly1305, ExportOnlyAead, Seq};
 
     use crate::{
         kdf::HkdfSha256, test_util::gen_ctx_simple_pair, Deserializable, HpkeError, Serializable,
@@ -672,6 +676,8 @@ mod test {
         };
     }
 
+    test_invalid_nonce!(test_invalid_nonce_aes128, AesGcm128);
+    test_invalid_nonce!(test_invalid_nonce_aes256, AesGcm128);
     test_invalid_nonce!(test_invalid_nonce_chacha, ChaCha20Poly1305);
 
     #[cfg(all(feature = "secp", any(feature = "alloc", feature = "std")))]
@@ -686,6 +692,16 @@ mod test {
         );
         test_overflow!(test_overflow_k256, crate::kem::SecpK256HkdfSha256);
 
+        test_ctx_correctness!(
+            test_ctx_correctness_aes128_k256,
+            AesGcm128,
+            crate::kem::SecpK256HkdfSha256
+        );
+        test_ctx_correctness!(
+            test_ctx_correctness_aes256_k256,
+            AesGcm256,
+            crate::kem::SecpK256HkdfSha256
+        );
         test_ctx_correctness!(
             test_ctx_correctness_chacha_k256,
             ChaCha20Poly1305,
