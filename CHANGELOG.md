@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.13.0] - 2024-09-04
+
+### Additions
+
+* Support [secp256k1-based DHKEM](https://www.ietf.org/archive/id/draft-wahby-cfrg-hpke-kem-secp256k1-01.html) with libsecp256k1 C bindings via rust-bitcoin's [`secp256k1`](https://crates.io/crates/secp256k1) crate. Enable it using the `secp` feature.
+
+### Changes
+
+* Removed `k256`, `x25519`, `p256`, `p384`, and `p521` features
+* Removed AesGcm AEAD schemes since bitcoin uses only ChaCha20Poly1305
+
+
 ## [0.12.0] - 2024-07-03
 
 ### Additions
