@@ -8,7 +8,7 @@ version = "0.13.0"
 authors = ["Dan Gould <d@ngould.dev>"]
 edition = "2021"
 license = "MIT/Apache-2.0"
-keywords = ["cryptography", "crypto", "key-exchange", "encryption", "aead", "secp256k1", "bitcoin"]
+keywords = ["cryptography", "encryption", "aead", "secp256k1", "bitcoin"]
 categories = ["cryptography", "no-std"]
 
 [features]
