@@ -7,6 +7,7 @@ readme = "README.md"
 version = "0.13.0"
 authors = ["Dan Gould <d@ngould.dev>"]
 edition = "2021"
+rust-version = "1.85"
 license = "MIT/Apache-2.0"
 keywords = ["cryptography", "encryption", "aead", "secp256k1", "bitcoin"]
 categories = ["cryptography", "no-std"]
