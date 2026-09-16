@@ -10,6 +10,7 @@ use generic_array::{
     GenericArray,
 };
 use subtle::{Choice, ConstantTimeEq};
+use zeroize::Zeroize;
 
 // We wrap the types in order to abstract away the secps56k1 dep
 
@@ -20,6 +21,14 @@ pub struct PublicKey(secp256k1::PublicKey);
 /// A secp256k1 private key
 #[derive(Clone)]
 pub struct PrivateKey(secp256k1::SecretKey);
+
+// Erase the scalar on drop. secp256k1 has no zeroize integration; `non_secure_erase` is
+// a volatile overwrite that does not cover copies made by moves.
+impl Drop for PrivateKey {
+    fn drop(&mut self) {
+        self.0.non_secure_erase();
+    }
+}
 
 impl ConstantTimeEq for PrivateKey {
     fn ct_eq(&self, other: &Self) -> Choice {
@@ -36,6 +45,13 @@ impl Eq for PrivateKey {}
 
 /// A bare DH computation result
 pub struct KexResult([u8; 64]);
+
+// DH results should zeroize on drop
+impl Drop for KexResult {
+    fn drop(&mut self) {
+        self.0.zeroize();
+    }
+}
 
 impl Serializable for PublicKey {
     // IANA HPKE KEM Identifiers: Npk of DHKEM(Secp256k1, HKDF-SHA256) is 65
@@ -185,7 +201,14 @@ impl DhKeyExchange for Secp256k1 {
 
             if let Ok(sk) = PrivateKey::from_bytes(&buf) {
                 let pk = Self::sk_to_pk(&sk);
+                // Zeroize the buffer before returning, as it contains sensitive key material
+                buf.zeroize();
                 return (sk, pk);
+            } else {
+                // Zeroize the rejected key material. This is done because `ikm` is
+                // technically allowed to be low-entropy, so leaking a KDF of `ikm`
+                // might leak some information about it.
+                buf.zeroize();
             }
         }
 

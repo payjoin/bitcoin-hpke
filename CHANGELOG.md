@@ -4,6 +4,36 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.20.0] - 2026-09-08
+
+Version numbers no longer track upstream `hpke`. Upstream 0.14.0 moved to `hybrid-array`,
+`aead` 0.6, and edition 2024, which this fork does not follow, so matching version numbers
+would imply a correspondence that no longer exists.
+
+### Additions
+
+* Zeroize DH outputs, key-derivation IKM and DeriveKeyPair candidate bytes, ported from
+  upstream rust-hpke
+  [#92](https://github.com/rozbb/rust-hpke/pull/92); the secp256k1 DH result and private key
+  now erase themselves on drop
+
+### Changes
+
+* SHA-256/384/512 are now backed by rust-bitcoin's [`bitcoin_hashes`](https://crates.io/crates/bitcoin_hashes) instead of [`sha2`](https://crates.io/crates/sha2)
+* ChaCha20-Poly1305 is now backed by rust-bitcoin's [`chacha20-poly1305`](https://crates.io/crates/chacha20-poly1305) instead of [`chacha20poly1305`](https://crates.io/crates/chacha20poly1305)
+* Dropped the `sha2` and `chacha20poly1305` dependencies
+* Bumped MSRV from 1.63.0 to 1.85, matching [rust-payjoin](https://github.com/payjoin/rust-payjoin)
+
+### Notes
+
+* Wire compatibility is unchanged: the RFC 9180 known-answer tests pass unmodified.
+* Both new dependencies are CC0-1.0 licensed; the crates they replace were MIT/Apache-2.0.
+* `chacha20-poly1305` does not zeroize per-operation key copies. Its key types are `Copy`
+  by design, following the rust-bitcoin position in
+  [rust-secp256k1#553](https://github.com/rust-bitcoin/rust-secp256k1/issues/553).
+  Its 0.2.1 floor is the first release with a constant-time Poly1305 tag comparison.
+
+
 ## [0.13.0] - 2024-09-04
 
 ### Additions

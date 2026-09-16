@@ -2,10 +2,10 @@
 
 use crate::util::write_u16_be;
 
+use crate::rust_bitcoin::{Sha256, Sha384, Sha512};
 use digest::{core_api::BlockSizeUser, Digest, OutputSizeUser};
 use generic_array::GenericArray;
 use hmac::SimpleHmac;
-use sha2::{Sha256, Sha384, Sha512};
 
 const VERSION_LABEL: &[u8] = b"HPKE-v1";
 

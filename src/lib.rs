@@ -117,6 +117,7 @@ mod dhkex;
 pub mod kdf;
 pub mod kem;
 mod op_mode;
+pub(crate) mod rust_bitcoin;
 mod setup;
 mod single_shot;
 

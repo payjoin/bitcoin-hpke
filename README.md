@@ -62,14 +62,8 @@ The `serde_impls` feature was removed. If you were using this and require backwa
 MSRV
 ----
 
-The current minimum supported Rust version (MSRV) is 1.63.0.
-
-To build and test with the MSRV you will need to pin the below dependency versions:
-
-```
-cargo update -p half --precise 2.2.1
-cargo update -p regex --precise 1.9.6
-```
+The current minimum supported Rust version (MSRV) is 1.85.0, matching
+[rust-payjoin](https://github.com/payjoin/rust-payjoin).
 
 Changelog
 ---------
