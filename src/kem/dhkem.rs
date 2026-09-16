@@ -19,7 +19,6 @@ macro_rules! impl_dhkem {
                 Deserializable, HpkeError, Serializable,
             };
 
-            use digest::OutputSizeUser;
             use rand_core::{CryptoRng, RngCore};
             use zeroize::Zeroize;
 
@@ -211,7 +210,7 @@ macro_rules! impl_dhkem {
 
                 /// The size of the shared secret at the end of the key exchange process
                 #[doc(hidden)]
-                type NSecret = <<$kdf as KdfTrait>::HashImpl as OutputSizeUser>::OutputSize;
+                type NSecret = <$kdf as KdfTrait>::OutputSize;
 
                 type PublicKey = PublicKey;
                 type PrivateKey = PrivateKey;
