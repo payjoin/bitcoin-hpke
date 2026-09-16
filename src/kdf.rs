@@ -328,4 +328,83 @@ mod tests {
             Err(HpkeError::KdfOutputTooLong)
         );
     }
+
+    // Wycheproof's HKDF suites, from https://github.com/C2SP/wycheproof (testvectors_v1). They
+    // cover empty salts and infos, the 255-block maximum, and over-long requests for all three
+    // hash functions.
+    #[cfg(feature = "std")]
+    mod wycheproof {
+        use super::*;
+
+        use std::{fs::File, string::String, vec::Vec};
+
+        #[derive(serde::Deserialize)]
+        struct TestFile {
+            #[serde(rename = "numberOfTests")]
+            number_of_tests: usize,
+            #[serde(rename = "testGroups")]
+            test_groups: Vec<TestGroup>,
+        }
+
+        #[derive(serde::Deserialize)]
+        struct TestGroup {
+            tests: Vec<TestCase>,
+        }
+
+        #[derive(serde::Deserialize)]
+        struct TestCase {
+            #[serde(rename = "tcId")]
+            tc_id: u32,
+            ikm: String,
+            salt: String,
+            info: String,
+            size: usize,
+            okm: String,
+            result: String,
+        }
+
+        fn run<Kdf: KdfTrait>(path: &str) {
+            let file: TestFile = serde_json::from_reader(File::open(path).unwrap()).unwrap();
+
+            let mut n = 0;
+            for tc in file.test_groups.iter().flat_map(|g| g.tests.iter()) {
+                let ikm = hex::decode(&tc.ikm).unwrap();
+                let salt = hex::decode(&tc.salt).unwrap();
+                let info = hex::decode(&tc.info).unwrap();
+                let expected = hex::decode(&tc.okm).unwrap();
+
+                let prk = hkdf_extract::<Kdf>(&salt, &[&ikm]);
+                let mut okm = vec![0u8; tc.size];
+                let res = hkdf_expand::<Kdf>(&prk, &[&info], &mut okm);
+
+                match tc.result.as_str() {
+                    "valid" | "acceptable" => {
+                        assert_eq!(res, Ok(()), "tcId {}", tc.tc_id);
+                        assert_eq!(okm, expected, "tcId {}", tc.tc_id);
+                    }
+                    "invalid" => {
+                        assert_eq!(res, Err(HpkeError::KdfOutputTooLong), "tcId {}", tc.tc_id)
+                    }
+                    other => panic!("tcId {}: unknown result {}", tc.tc_id, other),
+                }
+                n += 1;
+            }
+            assert_eq!(n, file.number_of_tests);
+        }
+
+        #[test]
+        fn hkdf_sha256() {
+            run::<HkdfSha256>("test-vectors-wycheproof-hkdf-sha256.json");
+        }
+
+        #[test]
+        fn hkdf_sha384() {
+            run::<HkdfSha384>("test-vectors-wycheproof-hkdf-sha384.json");
+        }
+
+        #[test]
+        fn hkdf_sha512() {
+            run::<HkdfSha512>("test-vectors-wycheproof-hkdf-sha512.json");
+        }
+    }
 }

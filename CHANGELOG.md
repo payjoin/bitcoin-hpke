@@ -28,7 +28,7 @@ would imply a correspondence that no longer exists.
 
 ### Notes
 
-* Wire compatibility is unchanged: the RFC 9180 known-answer tests pass unmodified. The in-crate HKDF is also checked against RFC 5869 Appendix A.
+* Wire compatibility is unchanged: the RFC 9180 known-answer tests pass unmodified. The in-crate HKDF is also checked against RFC 5869 Appendix A and the Wycheproof HKDF-SHA-256/384/512 suites.
 * Both new dependencies are CC0-1.0 licensed; the crates they replace were MIT/Apache-2.0.
 * `chacha20-poly1305` does not zeroize per-operation key copies. Its key types are `Copy`
   by design, following the rust-bitcoin position in
