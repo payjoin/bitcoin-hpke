@@ -1,6 +1,6 @@
 use crate::{
     dhkex::{DhError, DhKeyExchange},
-    kdf::{labeled_extract, Kdf as KdfTrait, LabeledExpand},
+    kdf::{labeled_expand, labeled_extract, Kdf as KdfTrait},
     util::{enforce_equal_len, enforce_outbuf_len, KemSuiteId},
     Deserializable, HpkeError, Serializable,
 };
@@ -186,23 +186,22 @@ impl DhKeyExchange for Secp256k1 {
     #[doc(hidden)]
     fn derive_keypair<Kdf: KdfTrait>(suite_id: &KemSuiteId, ikm: &[u8]) -> (PrivateKey, PublicKey) {
         // Write the label into a byte buffer and extract from the IKM
-        let (_, hkdf_ctx) = labeled_extract::<Kdf>(&[], suite_id, b"dkp_prk", ikm);
+        let mut dkp_prk = labeled_extract::<Kdf>(&[], suite_id, b"dkp_prk", ikm);
         // The buffer we hold the candidate scalar bytes in. This is the size of a private key.
         let mut buf = GenericArray::<u8, <PrivateKey as Serializable>::OutputSize>::default();
 
         // Try to generate a key 256 times. Practically, this will succeed and return
         // early on the first iteration.
         for counter in 0u8..=255 {
-            hkdf_ctx
-                .labeled_expand(suite_id, b"candidate", &[counter], &mut buf)
-                .unwrap();
+            labeled_expand::<Kdf>(&dkp_prk, suite_id, b"candidate", &[counter], &mut buf).unwrap();
 
             buf[0] &= 0xFF;
 
             if let Ok(sk) = PrivateKey::from_bytes(&buf) {
                 let pk = Self::sk_to_pk(&sk);
-                // Zeroize the buffer before returning, as it contains sensitive key material
+                // Zeroize the buffers before returning, as they contain sensitive key material
                 buf.zeroize();
+                dkp_prk.zeroize();
                 return (sk, pk);
             } else {
                 // Zeroize the rejected key material. This is done because `ikm` is

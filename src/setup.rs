@@ -1,6 +1,6 @@
 use crate::{
     aead::{Aead, AeadCtx, AeadCtxR, AeadCtxS},
-    kdf::{labeled_extract, DigestArray, Kdf as KdfTrait, LabeledExpand, MAX_DIGEST_SIZE},
+    kdf::{labeled_expand, labeled_extract, DigestArray, Kdf as KdfTrait, MAX_DIGEST_SIZE},
     kem::{Kem as KemTrait, SharedSecret},
     op_mode::{OpMode, OpModeR, OpModeS},
     util::full_suite_id,
@@ -75,9 +75,8 @@ where
     // We concat without allocation by making a buffer of the maximum possible size, then
     // taking the appropriately sized slice.
     let (sched_context_buf, sched_context_size) = {
-        let (psk_id_hash, _) =
-            labeled_extract::<Kdf>(&[], &suite_id, b"psk_id_hash", mode.get_psk_id());
-        let (info_hash, _) = labeled_extract::<Kdf>(&[], &suite_id, b"info_hash", info);
+        let psk_id_hash = labeled_extract::<Kdf>(&[], &suite_id, b"psk_id_hash", mode.get_psk_id());
+        let info_hash = labeled_extract::<Kdf>(&[], &suite_id, b"info_hash", info);
 
         // Yes it's overkill to bound the first input by MAX_DIGEST_SIZE, since it's only 1 byte.
         // But whatever, this is pretty clean.
@@ -95,9 +94,7 @@ where
     //   key = LabeledExpand(secret, "key", key_schedule_context, Nk)
     //   base_nonce = LabeledExpand(secret, "base_nonce", key_schedule_context, Nn)
     //   exporter_secret = LabeledExpand(secret, "exp", key_schedule_context, Nh)
-    // Instead of `secret` we derive an HKDF context which we run .expand() on to derive the
-    // key-nonce pair.
-    let (_, secret_ctx) =
+    let mut secret =
         labeled_extract::<Kdf>(&shared_secret.0, &suite_id, b"secret", mode.get_psk_bytes());
 
     // Empty fixed-size buffers
@@ -108,25 +105,32 @@ where
     // Fill the key, base nonce, and exporter secret. This only errors if the output values are
     // 255x the digest size of the hash function. Since these values are fixed at compile time, we
     // don't worry about it.
-    secret_ctx
-        .labeled_expand(&suite_id, b"key", sched_context, key.0.as_mut_slice())
-        .expect("aead key len is way too big");
-    secret_ctx
-        .labeled_expand(
-            &suite_id,
-            b"base_nonce",
-            sched_context,
-            base_nonce.0.as_mut_slice(),
-        )
-        .expect("nonce len is way too big");
-    secret_ctx
-        .labeled_expand(
-            &suite_id,
-            b"exp",
-            sched_context,
-            exporter_secret.0.as_mut_slice(),
-        )
-        .expect("exporter secret len is way too big");
+    labeled_expand::<Kdf>(
+        &secret,
+        &suite_id,
+        b"key",
+        sched_context,
+        key.0.as_mut_slice(),
+    )
+    .expect("aead key len is way too big");
+    labeled_expand::<Kdf>(
+        &secret,
+        &suite_id,
+        b"base_nonce",
+        sched_context,
+        base_nonce.0.as_mut_slice(),
+    )
+    .expect("nonce len is way too big");
+    labeled_expand::<Kdf>(
+        &secret,
+        &suite_id,
+        b"exp",
+        sched_context,
+        exporter_secret.0.as_mut_slice(),
+    )
+    .expect("exporter secret len is way too big");
+
+    secret.zeroize();
 
     AeadCtx::new(&key, base_nonce, exporter_secret)
 }

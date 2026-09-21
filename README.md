@@ -73,7 +73,7 @@ See [CHANGELOG.md](CHANGELOG.md) for a list of changes made throughout past vers
 Tests
 -----
 
-To run all tests, execute `cargo test --all-features`. This includes known-answer tests, which test against `test-vector-COMMIT_ID.json`,where `COMMIT_ID` is the short commit of the version of the [spec](https://github.com/cfrg/draft-irtf-cfrg-hpke) that the test vectors came from. The finalized spec uses commit 5f503c5. See the [reference implementation](https://github.com/cisco/go-hpke) for information on how to generate a test vector.
+To run all tests, execute `cargo test --all-features`. This includes known-answer tests, which test against `test-vector-COMMIT_ID.json`,where `COMMIT_ID` is the short commit of the version of the [spec](https://github.com/cfrg/draft-irtf-cfrg-hpke) that the test vectors came from. The finalized spec uses commit 5f503c5. See the [reference implementation](https://github.com/cisco/go-hpke) for information on how to generate a test vector. The HKDF implementation is also tested against the [Wycheproof](https://github.com/C2SP/wycheproof) HKDF vectors in `test-vectors-wycheproof-hkdf-*.json`, which are Apache-2.0 licensed.
 
 Benchmarks
 ----------

@@ -1,7 +1,7 @@
 //! Traits and structs for authenticated encryption schemes
 
 use crate::{
-    kdf::{Kdf as KdfTrait, LabeledExpand, SimpleHkdf},
+    kdf::{labeled_expand, Kdf as KdfTrait},
     kem::Kem as KemTrait,
     setup::ExporterSecret,
     util::{enforce_equal_len, enforce_outbuf_len, full_suite_id, write_u64_be, FullSuiteId},
@@ -225,16 +225,14 @@ impl<A: Aead, Kdf: KdfTrait, Kem: KemTrait> AeadCtx<A, Kdf, Kem> {
     /// bytes) of the underlying hash function, returns an `Err(HpkeError::KdfOutputTooLong)`. Just
     /// don't use to fill massive buffers and you'll be fine.
     pub fn export(&self, exporter_ctx: &[u8], out_buf: &mut [u8]) -> Result<(), HpkeError> {
-        // Use our exporter secret as the PRK for an HKDF-Expand op. The only time this fails is
-        // when the length of the PRK is not the the underlying hash function's digest size. But
-        // that's guaranteed by the type system, so we can unwrap().
-        let hkdf_ctx = SimpleHkdf::<Kdf>::from_prk(self.exporter_secret.0.as_slice()).unwrap();
-
-        // This call either succeeds or returns hkdf::InvalidLength (iff the buffer length is more
-        // than 255x the digest size of the underlying hash function)
-        hkdf_ctx
-            .labeled_expand(&self.suite_id, b"sec", exporter_ctx, out_buf)
-            .map_err(|_| HpkeError::KdfOutputTooLong)
+        // The exporter secret is the PRK for an HKDF-Expand op
+        labeled_expand::<Kdf>(
+            self.exporter_secret.0.as_slice(),
+            &self.suite_id,
+            b"sec",
+            exporter_ctx,
+            out_buf,
+        )
     }
 
     #[cfg(test)]
