@@ -2,16 +2,18 @@
 
 use crate::{util::write_u16_be, HpkeError};
 
-use bitcoin_hashes::{sha256, sha384, sha512, Hash, HashEngine, Hmac, HmacEngine};
+use bitcoin_hashes::{sha256, Hash, HashEngine, Hmac, HmacEngine};
 use generic_array::{
-    typenum::{Unsigned, U32, U48, U64},
+    typenum::{Unsigned, U32},
     ArrayLength, GenericArray,
 };
 use zeroize::Zeroize;
 
 const VERSION_LABEL: &[u8] = b"HPKE-v1";
 
-// This is the maximum value of Nh. It is achieved by HKDF-SHA512 in RFC 9180 §7.2.
+// This is the maximum value of Nh in RFC 9180 §7.2, achieved by HKDF-SHA512. It sizes the fixed
+// key-schedule buffers in `setup`, and `Kdf` is a public trait, so it stays at the spec-wide bound
+// rather than the 32 bytes of the one KDF implemented here. `assert_output_size` enforces it.
 pub(crate) const MAX_DIGEST_SIZE: usize = 64;
 
 /// Represents key derivation functionality
@@ -47,37 +49,13 @@ impl KdfTrait for HkdfSha256 {
     const KDF_ID: u16 = 0x0001;
 }
 
-/// The implementation of HKDF-SHA384
-pub struct HkdfSha384 {}
-
-impl KdfTrait for HkdfSha384 {
-    #[doc(hidden)]
-    type HashImpl = sha384::Hash;
-    #[doc(hidden)]
-    type OutputSize = U48;
-
-    // RFC 9180 §7.2: HKDF-SHA384
-    const KDF_ID: u16 = 0x0002;
-}
-
-/// The implementation of HKDF-SHA512
-pub struct HkdfSha512 {}
-
-impl KdfTrait for HkdfSha512 {
-    #[doc(hidden)]
-    type HashImpl = sha512::Hash;
-    #[doc(hidden)]
-    type OutputSize = U64;
-
-    // RFC 9180 §7.2: HKDF-SHA512
-    const KDF_ID: u16 = 0x0003;
-}
-
 // `Kdf::OutputSize` and `HashImpl::LEN` name the same length but nothing ties them together at
-// the type level, and the copies into `DigestArray` below would panic on a mismatch. Checking at
-// monomorphization turns a wrong `Kdf` impl into a compile error instead.
+// the type level, and the copies into `DigestArray` below would panic on a mismatch. A digest
+// wider than `MAX_DIGEST_SIZE` would likewise overflow the key-schedule buffers in `setup`.
+// Checking at monomorphization turns a wrong `Kdf` impl into a compile error instead.
 const fn assert_output_size<Kdf: KdfTrait>() {
     assert!(<Kdf::OutputSize as Unsigned>::USIZE == <Kdf::HashImpl as Hash>::LEN);
+    assert!(<Kdf::OutputSize as Unsigned>::USIZE <= MAX_DIGEST_SIZE);
 }
 
 // RFC 5869 §2.2
@@ -197,6 +175,19 @@ pub fn labeled_expand<Kdf: KdfTrait>(
 mod tests {
     use super::*;
 
+    use bitcoin_hashes::sha512;
+    use generic_array::typenum::U64;
+
+    // Test-only HKDF-SHA512. Not exported, since no Bitcoin HPKE deployment uses it, but it runs
+    // the generic Extract and Expand code at a second block and digest size.
+    struct HkdfSha512 {}
+
+    impl KdfTrait for HkdfSha512 {
+        type HashImpl = sha512::Hash;
+        type OutputSize = U64;
+        const KDF_ID: u16 = 0x0003;
+    }
+
     use hex_literal::hex;
 
     // RFC 5869 Appendix A, cases 1-3 (SHA-256). Case 2 needs three output blocks, case 3 has an
@@ -257,9 +248,10 @@ mod tests {
         );
     }
 
-    // HKDF-Extract is one HMAC, so RFC 4231 cases 2 and 6 pin it for SHA-384 and SHA-512 too,
-    // which RFC 5869 and the RFC 9180 known-answer tests never reach. The data is fed in two
-    // pieces, as `labeled_extract` does.
+    // HKDF-Extract is one HMAC, so RFC 4231 cases 2 and 6 pin it directly. The data is fed in
+    // two pieces, as `labeled_extract` does, which neither RFC 5869 nor Wycheproof exercise.
+    // `HkdfSha512` keeps the generic Extract and Expand code honest at a second block and
+    // digest size, since every shipped `Kdf` is 32 bytes wide.
     #[test]
     fn extract_is_hmac_rfc4231() {
         fn check<Kdf: KdfTrait>(key: &[u8], data: &[u8], expected: &[u8]) {
@@ -275,14 +267,7 @@ mod tests {
             data,
             &hex!("5bdcc146bf60754e6a042426089575c75a003f089d2739839dec58b964ec3843"),
         );
-        check::<HkdfSha384>(
-            key,
-            data,
-            &hex!(
-                "af45d2e376484031617f78d2b58a6b1b9c7ef464f5a01b47"
-                "e42ec3736322445e8e2240ca5e69e2c78b3239ecfab21649"
-            ),
-        );
+
         check::<HkdfSha512>(
             key,
             data,
@@ -292,21 +277,13 @@ mod tests {
             ),
         );
 
-        // Key longer than every block size, so HMAC hashes it first
+        // RFC 4231 case 6: the key exceeds SHA-512's 128-byte block, so HMAC hashes it first
         let key = [0xaa_u8; 131];
         let data = b"Test Using Larger Than Block-Size Key - Hash Key First";
         check::<HkdfSha256>(
             &key,
             data,
             &hex!("60e431591ee0b67f0d8a26aacbf5b77f8e0bc6213728c5140546040f0ee37f54"),
-        );
-        check::<HkdfSha384>(
-            &key,
-            data,
-            &hex!(
-                "4ece084485813e9088d2c63a041bc5b44f9ef1012a2b588f"
-                "3cd11f05033ac4c60c2ef6ab4030fe8296248df163f44952"
-            ),
         );
         check::<HkdfSha512>(
             &key,
@@ -320,18 +297,23 @@ mod tests {
 
     #[test]
     fn expand_rejects_more_than_255_blocks() {
-        let prk = [0u8; 32];
-        let mut okm = [0u8; 255 * 32 + 1];
-        assert!(hkdf_expand::<HkdfSha256>(&prk, &[b"info"], &mut okm[..255 * 32]).is_ok());
-        assert_eq!(
-            hkdf_expand::<HkdfSha256>(&prk, &[b"info"], &mut okm),
-            Err(HpkeError::KdfOutputTooLong)
-        );
+        fn check<Kdf: KdfTrait>() {
+            let hash_len = <Kdf::HashImpl as Hash>::LEN;
+            let prk = [0u8; MAX_DIGEST_SIZE];
+            let mut okm = [0u8; 255 * MAX_DIGEST_SIZE + 1];
+            let (prk, okm) = (&prk[..hash_len], &mut okm[..255 * hash_len + 1]);
+            assert!(hkdf_expand::<Kdf>(prk, &[b"info"], &mut okm[..255 * hash_len]).is_ok());
+            assert_eq!(
+                hkdf_expand::<Kdf>(prk, &[b"info"], okm),
+                Err(HpkeError::KdfOutputTooLong)
+            );
+        }
+        check::<HkdfSha256>();
+        check::<HkdfSha512>();
     }
 
-    // Wycheproof's HKDF suites, from https://github.com/C2SP/wycheproof (testvectors_v1). They
-    // cover empty salts and infos, the 255-block maximum, and over-long requests for all three
-    // hash functions.
+    // Wycheproof's HKDF-SHA-256 suite, from https://github.com/C2SP/wycheproof (testvectors_v1).
+    // It covers empty salts and infos, the 255-block maximum, and over-long requests.
     #[cfg(feature = "std")]
     mod wycheproof {
         use super::*;
@@ -395,16 +377,6 @@ mod tests {
         #[test]
         fn hkdf_sha256() {
             run::<HkdfSha256>("test-vectors-wycheproof-hkdf-sha256.json");
-        }
-
-        #[test]
-        fn hkdf_sha384() {
-            run::<HkdfSha384>("test-vectors-wycheproof-hkdf-sha384.json");
-        }
-
-        #[test]
-        fn hkdf_sha512() {
-            run::<HkdfSha512>("test-vectors-wycheproof-hkdf-sha512.json");
         }
     }
 }
