@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.20.0] - 2026-09-08
+## [0.20.0] - 2026-09-23
 
 Version numbers no longer track upstream `hpke`. Upstream 0.14.0 moved to `hybrid-array`,
 `aead` 0.6, and edition 2024, which this fork does not follow, so matching version numbers
@@ -21,20 +21,28 @@ would imply a correspondence that no longer exists.
 
 * SHA-256 is now backed by rust-bitcoin's [`bitcoin_hashes`](https://crates.io/crates/bitcoin_hashes) instead of [`sha2`](https://crates.io/crates/sha2)
 * ChaCha20-Poly1305 is now backed by rust-bitcoin's [`chacha20-poly1305`](https://crates.io/crates/chacha20-poly1305) instead of [`chacha20poly1305`](https://crates.io/crates/chacha20poly1305)
-* HKDF is now computed over `bitcoin_hashes`' HMAC instead of the [`hkdf`](https://crates.io/crates/hkdf) and [`hmac`](https://crates.io/crates/hmac) crates. `bitcoin_hashes` 0.14 ships HMAC but not HKDF, so RFC 5869 Extract and Expand are written out in `kdf.rs`
-* Removed `HkdfSha384` and `HkdfSha512`. Nothing in the Bitcoin ecosystem uses them with HPKE; `HkdfSha256` is the only KDF left, the one rust-payjoin instantiates. `bitcoin_hashes` still ships both hashes, so restoring them is a `Kdf` impl each, and `MAX_DIGEST_SIZE` stays at the RFC 9180 bound of 64 so wider digests keep fitting the key-schedule buffers
-* `Kdf::HashImpl` is now a `bitcoin_hashes::Hash` type, and `Kdf` gained an `OutputSize` associated type. The `digest` trait tower and the hidden `LabeledExpand` trait are gone
-* Dropped the `sha2`, `chacha20poly1305`, `hkdf`, `hmac` and `digest` dependencies. Every cryptographic primitive now comes from rust-bitcoin; the remaining non-rust-bitcoin dependencies (`aead`, `generic-array`, `subtle`, `zeroize`, `rand_core`) are trait and utility crates
+* HKDF is now computed over `bitcoin_hashes`' HMAC instead of the [`hkdf`](https://crates.io/crates/hkdf) and [`hmac`](https://crates.io/crates/hmac) crates. `bitcoin_hashes` 0.14 ships HMAC but not HKDF, so RFC 5869 Extract and Expand are implemented in this crate
+* Removed `HkdfSha384` and `HkdfSha512`. Nothing in the Bitcoin ecosystem uses them with HPKE; `HkdfSha256` is the only KDF left, the one rust-payjoin instantiates. `bitcoin_hashes` still ships both hashes, so restoring them is a `Kdf` impl each, and the key-schedule buffers stay sized for RFC 9180's 64-byte digest bound so wider digests still fit
+* `Kdf::HashImpl` is now a `bitcoin_hashes::Hash` type, and `Kdf` gained an `OutputSize` associated type. The `digest` trait tower is gone
+* The `#[doc(hidden)]` KDF helpers changed shape. `labeled_extract` returns only the PRK as a `GenericArray<u8, Kdf::OutputSize>` instead of a PRK and `SimpleHkdf` pair. `labeled_expand` is a free function taking the PRK as `&[u8]`, replacing the `LabeledExpand` trait. `extract_and_expand` returns `HpkeError` instead of `hkdf::InvalidLength`. They were never public API, but code that called them will need updating
+* Dropped the `sha2`, `chacha20poly1305`, `hkdf`, `hmac` and `digest` dependencies. The primitives now come from rust-bitcoin (secp256k1, the SHA-256 and HMAC in `bitcoin_hashes`, and `chacha20-poly1305`), with HKDF built on that HMAC in this crate. The remaining non-rust-bitcoin dependencies (`aead`, `generic-array`, `subtle`, `zeroize`, `rand_core`) are trait and utility crates
 * Bumped MSRV from 1.63.0 to 1.85, matching [rust-payjoin](https://github.com/payjoin/rust-payjoin)
 
 ### Notes
 
-* Wire compatibility for DHKEM(secp256k1, HKDF-SHA256) with HKDF-SHA256 is unchanged: the secp256k1 known-answer vectors in `test-vectors-k256.json` pass unmodified. The in-crate HKDF is also checked against RFC 5869 Appendix A, RFC 4231 and the Wycheproof HKDF-SHA-256 suite.
-* Both new dependencies are CC0-1.0 licensed; the crates they replace were MIT/Apache-2.0.
+* Wire compatibility for DHKEM(secp256k1, HKDF-SHA256) with HKDF-SHA256 and
+  ChaCha20-Poly1305 is unchanged: the secp256k1 known-answer vectors in
+  `test-vectors-k256.json` pass unmodified. The in-crate HKDF is also checked against
+  RFC 5869 Appendix A, RFC 4231 and the Wycheproof HKDF-SHA-256 suite.
+* `bitcoin_hashes` and `chacha20-poly1305` are CC0-1.0 licensed; the crates they replace were
+  MIT/Apache-2.0.
 * `chacha20-poly1305` does not zeroize per-operation key copies. Its key types are `Copy`
   by design, following the rust-bitcoin position in
   [rust-secp256k1#553](https://github.com/rust-bitcoin/rust-secp256k1/issues/553).
   Its 0.2.1 floor is the first release with a constant-time Poly1305 tag comparison.
+* `bitcoin_hashes` has no zeroize support, so the `Hmac` outputs and consumed `HmacEngine`
+  states inside the HKDF are not wiped. The PRK copies this crate holds and the last Expand
+  block are zeroized. Tracked in [#16](https://github.com/payjoin/bitcoin-hpke/issues/16).
 
 
 ## [0.13.0] - 2024-09-04
