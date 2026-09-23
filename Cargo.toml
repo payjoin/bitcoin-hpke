@@ -32,6 +32,7 @@ chacha20-poly1305 = { version = "0.2.1", default-features = false }
 
 [dev-dependencies]
 aes-gcm = "0.10"
+bitcoin-hpke-0-13 = { package = "bitcoin-hpke", version = "=0.13.0", default-features = false, features = ["std", "secp"] }
 criterion = { version = "0.4", features = ["html_reports"] }
 hex = "0.4"
 hex-literal = "0.4"
